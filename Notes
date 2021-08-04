@@ -1,0 +1,50 @@
+Ben Eater 6502+VGA
+
+Video resolution: 100 columns X 60 rows
+
+Memory map
+
+	-EEPROM and RAM are 256 kbit = 32 KByte
+	-2 KB for each row in the table below
+	-VGA gets 4 KB total (Used in code as 32 pages of 128 columns = 4 KB)
+
+	0000 xxxx xxxx xxxx		0000-0FFF		6502 RAM Address Space
+	0001 xxxx xxxx xxxx		1000-2FFF		6502 RAM Address Space
+	0010 xxxx xxxx xxxx		2000-2FFF		6502 VGA Address Space
+	0011 xxxx xxxx xxxx		3000-3FFF		6502 VGA Address Space
+	0100 xxxx xxxx xxxx		4000-4FFF		6502 I/O Address Space
+	0101 xxxx xxxx xxxx		5000-5FFF		6502 I/O Address Space
+	0110 xxxx xxxx xxxx		6000-6FFF		6502 I/O Address Space
+	0111 xxxx xxxx xxxx		7000-7FFF		6502 I/O Address Space
+	1000 xxxx xxxx xxxx		8000-8FFF		6502 ROM Address Space
+	1001 xxxx xxxx xxxx		9000-9FFF		6502 ROM Address Space
+	1010 xxxx xxxx xxxx		A000-AFFF		6502 ROM Address Space
+	1011 xxxx xxxx xxxx		B000-BFFF		6502 ROM Address Space
+	1100 xxxx xxxx xxxx		C000-CFFF		6502 ROM Address Space
+	1101 xxxx xxxx xxxx		D000-DFFF		6502 ROM Address Space
+	1110 xxxx xxxx xxxx		E000-EFFF		6502 ROM Address Space
+	1111 xxxx xxxx xxxx		F000-FFFF		6502 ROM Address Space
+
+	
+Colors
+
+	-6 outputs of U25 (74LS245) to 6 resistors - 2 red, 2 green, 2 blue
+	-Bitwise OR bits to produce 64 different colors. Starter RGB list below.
+	
+	00000000 	0 	black
+	
+	00000001 	1 	red
+	00000010 	2 	dark red
+	00000011 	3	bright red
+
+	00000100 	4 	green
+	00001000 	8 	dark green
+	00001100 	12 	bright green
+
+	00010000 	16 	blue
+	00100000 	32 	dark blue
+	00110000 	48 	bright blue 
+	
+	00111111 	63 	white
+
+	
