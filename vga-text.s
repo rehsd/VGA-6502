@@ -12,9 +12,9 @@
 ; 00100000	32	dim blue
 ; 00010000	16	middle blue
 ; 
-; 00001100	12	bright blue
-; 00001000	8	dim blue
-; 00000100	4	middle blue
+; 00001100	12	bright green
+; 00001000	8	dim green
+; 00000100	4	middle green
 ; 
 ; 00000011	3	bright red
 ; 00000010	2	dim red
