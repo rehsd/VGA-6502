@@ -47,7 +47,7 @@ char_color = $54
   .org $8000
 reset:
 loop:
-  ;TO DO Instead of clearly the entire screen, just clear the space for the character about to be displayed
+  ;TO DO Instead of clearing the entire screen, just clear the space for the character about to be displayed
 
   jsr InitVideoMemory
   jsr FillBlack
