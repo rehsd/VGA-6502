@@ -8,32 +8,17 @@
 ; Use A to track pixel color
 ; Resolution: 100 columns x 60 rows (was 75 rows with just VGA circuit, with no 6502 integration)
 
-; 00110000	48	bright blue
-; 00100000	32	dim blue
-; 00010000	16	middle blue
-; 
-; 00001100	12	bright green
-; 00001000	8	dim green
-; 00000100	4	middle green
-; 
-; 00000011	3	bright red
-; 00000010	2	dim red
-; 00000001	1	middle red
-; 
-; 00000000	0	black
-; 00111111	63	white
-
-;lda #$00	;color	BLACK
-;lda #$30	;color  BLUE BRIGHT
-;lda #$10	;color  BLUE REGULAR    
-;lda #$20	;color  BLUE DIM
-;lda #$0c	;color  GREEN BRIGHT
-;lda #$04	;color  GREEN REGULAR
-;lda #$08	;color  GREEN DIM
-;lda #$03	;color  RED BRIGHT
-;lda #$01	;color  RED REGULAR
-;lda #$02	;color  RED DIM
-;lda #$3F	;color  WHITE
+;	00000000 	0 	#$00    black
+;	00000001 	1 	#$01    red
+;	00000010 	2 	#$02    dark red
+;	00000011 	3	  #$03    bright red
+;	00000100 	4 	#$04    green
+;	00001000 	8 	#$08    dark green
+;	00001100 	12 	#$0c    bright green
+;	00010000 	16 	#$10    blue
+;	00100000 	32 	#$20    dark blue
+;	00110000 	48 	#$30    bright blue 
+;	00111111 	63 	#$3F    white
 
 ; Font: 5x7 fixed   https://thumb7.shutterstock.com/display_pic_with_logo/1811018/359671199/stock-vector-blue-led-letters-and-numbers-electronic-scoreboard-vector-alphabet-359671199.jpg
 
