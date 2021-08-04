@@ -31,20 +31,14 @@ Colors
 	-6 outputs of U25 (74LS245) to 6 resistors - 2 red, 2 green, 2 blue
 	-Bitwise OR bits to produce 64 different colors. Starter RGB list below.
 	
-	00000000 	0 	black
-	
-	00000001 	1 	red
-	00000010 	2 	dark red
-	00000011 	3	bright red
-
-	00000100 	4 	green
-	00001000 	8 	dark green
-	00001100 	12 	bright green
-
-	00010000 	16 	blue
-	00100000 	32 	dark blue
-	00110000 	48 	bright blue 
-	
-	00111111 	63 	white
-
-	
+	00000000 	0 	#$00    black
+	00000001 	1 	#$01    red
+	00000010 	2 	#$02    dark red
+	00000011 	3	#$03    bright red
+	00000100 	4 	#$04    green
+	00001000 	8 	#$08    dark green
+	00001100 	12 	#$0c    bright green
+	00010000 	16 	#$10    blue
+	00100000 	32 	#$20    dark blue
+	00110000 	48 	#$30    bright blue 
+	00111111 	63 	#$3F    white
