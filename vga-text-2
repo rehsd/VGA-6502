@@ -37,7 +37,10 @@ char_y_offset = $16
 char_current_val = $18
 message_to_process = $20
 delayDurationHighByte = $30     ;Count from this number (high byte) to FF - higher number results in shorter delay
+
+
 ;other addresses used throughout code
+;   message(s) below
 ;   $40, $41    Delay subroutine
 ;   ...
 
@@ -194,7 +197,7 @@ loop:
   jsr Delay
   jsr Delay
 
-;;;;;;;;;;;;;
+  ;;;;;;;;;;;;;
 
   lda #$00
   sta message_to_process
@@ -297,12 +300,11 @@ ClearChar:
 message1 db " 0123456789", 0
 message2 db "ABCDEFGHIJKLM", 0
 message3 db "NOPQRSTUVWXYZ", 0
-message4 db " 00 0F FF 10", 0
+message4 db "00.0F!FF?10", 0
 message5 db "SET POSITION", 0
-message6 db "   AND COLOR", 0
+message6 db "  AND COLOR", 0
 message7 db "6502 PLUS", 0
-message8 db "  V  G  A", 0
-
+message8 db "    V-G-A", 0
 
 NoMessage:
   ldx $40   ;set x back to orig value
@@ -360,7 +362,6 @@ PrintStringLoopCont:
   ldx $40   ;set x back to orig value
   rts
 
-
 jump_to_PrintChar0:
   jmp PrintChar0
 jump_to_PrintChar1:
@@ -381,6 +382,18 @@ jump_to_PrintChar8:
   jmp PrintChar8
 jump_to_PrintChar9:
   jmp PrintChar9
+jump_to_PrintCharA:
+  jmp PrintCharA
+jump_to_PrintCharB:
+  jmp PrintCharB
+jump_to_PrintCharC:
+  jmp PrintCharC
+jump_to_PrintCharD:
+  jmp PrintCharD
+jump_to_PrintCharE:
+  jmp PrintCharE
+jump_to_PrintCharF:
+  jmp PrintCharF
 
 print_char:
   sta char_current_val
@@ -460,7 +473,14 @@ print_char:
   beq jump_to_PrintCharZ
   cmp #$20  ;SPACE
   beq jump_to_PrintCharSpace
-
+  cmp #$2E  ;PERIOD
+  beq jump_to_PrintCharPeriod
+  cmp #$21  ;EXCLAMATION
+  beq jump_to_PrintCharExclamation
+  cmp #$3F  ;QUESTION
+  beq jump_to_PrintCharQuestion
+  cmp #$2D  ;DASH
+  beq jump_to_PrintCharDash
 Next:
   ;move the 'cursor' to the right by 7 pixels
   inc char_y_offset
@@ -473,18 +493,6 @@ Next:
   inx
   jmp PrintStringLoop
 
-jump_to_PrintCharA:
-  jmp PrintCharA
-jump_to_PrintCharB:
-  jmp PrintCharB
-jump_to_PrintCharC:
-  jmp PrintCharC
-jump_to_PrintCharD:
-  jmp PrintCharD
-jump_to_PrintCharE:
-  jmp PrintCharE
-jump_to_PrintCharF:
-  jmp PrintCharF
 jump_to_PrintCharG:
   jmp PrintCharG
 jump_to_PrintCharH:
@@ -527,6 +535,14 @@ jump_to_PrintCharZ:
   jmp PrintCharZ
 jump_to_PrintCharSpace:
   jmp PrintCharSpace
+jump_to_PrintCharPeriod:
+  jmp PrintCharPeriod
+jump_to_PrintCharExclamation:
+  jmp PrintCharExclamation
+jump_to_PrintCharQuestion:
+  jmp PrintCharQuestion
+jump_to_PrintCharDash:
+  jmp PrintCharDash
 
 
 ;Subroutines for manually (painfully) creating each character
@@ -4026,8 +4042,158 @@ PrintCharZ:
 PrintCharSpace:
   ;nothing to do for a space
   jmp Next
+PrintCharPeriod:
+  lda char_vp_p1
+  sta vidpage + 1
+  lda char_vp
+  sta vidpage
+  
+  ;lda #$30
+  ;sta vidpage + 1
+  ;lda #$80   
+  ;sta vidpage
+ 
+  
+  ldy char_y_offset  ;column start
+  sty $44
 
-  ;TO DO remove reset of subroutine
+
+  lda char_color	;load color stored above
+  ;iny
+  ;sta (vidpage), y ; write A register to address vidpage + y
+
+  
+  lda vidpage + 1
+  clc
+  adc #01
+  sta vidpage + 1
+  lda #$00 
+  sta vidpage
+  ldy $44  ;column
+  lda char_color	;load color stored above
+  
+  lda #$80  
+  sta vidpage
+  ldy $44  ;column
+  lda char_color	;load color stored above
+
+  lda vidpage + 1
+  clc
+  adc #01
+  sta vidpage + 1
+  lda #$00   
+  sta vidpage
+  ldy $44  ;column
+  lda char_color	;load color stored above
+
+  lda #$80   
+  sta vidpage
+  ldy $44  ;column
+  lda char_color	;load color stored above
+  
+  lda vidpage + 1
+  clc
+  adc #01
+  sta vidpage + 1
+  lda #$00   
+  sta vidpage
+  ldy $44  ;column
+  lda char_color	;load color stored above
+
+  lda #$80   
+  sta vidpage
+  ldy $44  ;column
+  lda char_color	;load color stored above
+  iny
+  sta (vidpage), y ; write A register to address vidpage + y
+  
+  jmp Next
+PrintCharExclamation:
+  lda char_vp_p1
+  sta vidpage + 1
+  lda char_vp
+  sta vidpage
+  
+  ;lda #$30
+  ;sta vidpage + 1
+  ;lda #$80   
+  ;sta vidpage
+ 
+  
+  ldy char_y_offset  ;column start
+  sty $44
+
+
+  lda char_color	;load color stored above
+  iny
+  iny
+  sta (vidpage), y ; write A register to address vidpage + y
+
+  
+  lda vidpage + 1
+  clc
+  adc #01
+  sta vidpage + 1
+  lda #$00 
+  sta vidpage
+  ldy $44  ;column
+  lda char_color	;load color stored above
+  iny
+  iny
+  sta (vidpage), y ; write A register to address vidpage + y
+
+  
+  lda #$80  
+  sta vidpage
+  ldy $44  ;column
+  lda char_color	;load color stored above
+  iny
+  iny
+  sta (vidpage), y ; write A register to address vidpage + y
+
+
+  lda vidpage + 1
+  clc
+  adc #01
+  sta vidpage + 1
+  lda #$00   
+  sta vidpage
+  ldy $44  ;column
+  lda char_color	;load color stored above
+  iny
+  iny
+  sta (vidpage), y ; write A register to address vidpage + y
+
+
+  lda #$80   
+  sta vidpage
+  ldy $44  ;column
+  lda char_color	;load color stored above
+  iny
+  iny
+  sta (vidpage), y ; write A register to address vidpage + y
+
+  
+  lda vidpage + 1
+  clc
+  adc #01
+  sta vidpage + 1
+  lda #$00   
+  sta vidpage
+  ldy $44  ;column
+  lda char_color	;load color stored above
+
+  lda #$80   
+  sta vidpage
+  ldy $44  ;column
+  lda char_color	;load color stored above
+  iny
+  iny
+  sta (vidpage), y ; write A register to address vidpage + y
+
+  
+  jmp Next
+PrintCharQuestion:
   lda char_vp_p1
   sta vidpage + 1
   lda char_vp
@@ -4087,11 +4253,7 @@ PrintCharSpace:
   ldy $44  ;column
   lda char_color	;load color stored above
   iny
-  sta (vidpage), y ; write A register to address vidpage + y
   iny
-  sta (vidpage), y ; write A register to address vidpage + y
-  iny
-  sta (vidpage), y ; write A register to address vidpage + y
   iny
   sta (vidpage), y ; write A register to address vidpage + y
 
@@ -4099,8 +4261,6 @@ PrintCharSpace:
   sta vidpage
   ldy $44  ;column
   lda char_color	;load color stored above
-  iny
-  iny
   iny
   iny
   sta (vidpage), y ; write A register to address vidpage + y
@@ -4113,14 +4273,56 @@ PrintCharSpace:
   sta vidpage
   ldy $44  ;column
   lda char_color	;load color stored above
-  sta (vidpage), y ; write A register to address vidpage + y
-  iny
-  iny
-  iny
-  iny
-  sta (vidpage), y ; write A register to address vidpage + y
 
   lda #$80   
+  sta vidpage
+  ldy $44  ;column
+  lda char_color	;load color stored above
+  iny
+  iny
+  sta (vidpage), y ; write A register to address vidpage + y
+  
+  jmp Next
+PrintCharDash:
+  lda char_vp_p1
+  sta vidpage + 1
+  lda char_vp
+  sta vidpage
+  
+  ;lda #$30
+  ;sta vidpage + 1
+  ;lda #$80   
+  ;sta vidpage
+ 
+  
+  ldy char_y_offset  ;column start
+  sty $44
+
+
+  lda char_color	;load color stored above
+  ;iny
+  ;sta (vidpage), y ; write A register to address vidpage + y
+
+  
+  lda vidpage + 1
+  clc
+  adc #01
+  sta vidpage + 1
+  lda #$00 
+  sta vidpage
+  ldy $44  ;column
+  lda char_color	;load color stored above
+  
+  lda #$80  
+  sta vidpage
+  ldy $44  ;column
+  lda char_color	;load color stored above
+
+  lda vidpage + 1
+  clc
+  adc #01
+  sta vidpage + 1
+  lda #$00   
   sta vidpage
   ldy $44  ;column
   lda char_color	;load color stored above
@@ -4130,6 +4332,25 @@ PrintCharSpace:
   sta (vidpage), y ; write A register to address vidpage + y
   iny
   sta (vidpage), y ; write A register to address vidpage + y
+
+  lda #$80   
+  sta vidpage
+  ldy $44  ;column
+  lda char_color	;load color stored above
+  
+  lda vidpage + 1
+  clc
+  adc #01
+  sta vidpage + 1
+  lda #$00   
+  sta vidpage
+  ldy $44  ;column
+  lda char_color	;load color stored above
+
+  lda #$80   
+  sta vidpage
+  ldy $44  ;column
+  lda char_color	;load color stored above
   
   jmp Next
 
