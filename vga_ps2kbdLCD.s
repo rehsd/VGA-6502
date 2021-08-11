@@ -1,4 +1,4 @@
-; Project for 6502+VGA from Ben Eater
+; Project for 6502+LCD+PS2+VGA for Ben Eater circuit design
 ; Assembly code to be compiled with vasm - to create bin file for EEPROM programmer
 ; Example command line to run:
 ;	vasm6502_oldstyle.exe -Fbin -dotdir vga_ps2kbdLCD.s -o vga_ps2kbdLCD.bin
