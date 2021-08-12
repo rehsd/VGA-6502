@@ -20,10 +20,16 @@
 ;	00110000 	48 	#$30    bright blue 
 ;	00111111 	63 	#$3F    white
 
+;other addresses used throughout code
+;   message(s) below
+;   $40, $41    Delay subroutine
+;   ...
+
 ; Font: 5x7 fixed   https://thumb7.shutterstock.com/display_pic_with_logo/1811018/359671199/stock-vector-blue-led-letters-and-numbers-electronic-scoreboard-vector-alphabet-359671199.jpg
 
 
 ; TO DO
+; -Add support for lower case and additional non-alpha characters (e.g., punctuation)
 ; -Improve code commenting :)
 ; -ClearChar subroutine
 ; -FillRegion type of subroutine to draw rectanglular shapes
@@ -82,15 +88,28 @@ reset:
   lda #%00000000 ; Set all pins on port A to input
   sta DDRA
 
+  ;see page 42 of https://eater.net/datasheets/HD44780.pdf
+  ;when running 6502 at 4.9 MHz (versus 1 MHz), sometimes init needs additional call or delay
+  
   jsr lcd_init
-  lda #%00101000 ; Set 4-bit mode; 2-line display; 5x8 font
+  
+  lda #%00101000 ; Set 4-bit mode; 2-line display; 5x8 font     ;See page 24 of HD44780.pdf
   jsr lcd_instruction
+  ;call again for higher clock speed setup
+  lda #%00101000 ; Set 4-bit mode; 2-line display; 5x8 font     ;See page 24 of HD44780.pdf
+  jsr lcd_instruction
+
   lda #%00001110 ; Display on; cursor on; blink off
   jsr lcd_instruction
+  
   lda #%00000110 ; Increment and shift cursor; don't shift display
   jsr lcd_instruction
   lda #%00000001 ; Clear display
   jsr lcd_instruction
+
+  lda #%00001110 ; Display on; cursor on; blink off
+  jsr lcd_instruction
+
 
   lda #$00
   sta kb_flags
@@ -173,8 +192,8 @@ key_pressed:
 
 enter_pressed:
   
-;*** vga ***
-;crlf
+  ;*** vga ***
+  ;crlf
   lda #$36
   sta char_vp_p1
   lda #$80
@@ -184,7 +203,7 @@ enter_pressed:
   lda #$8
   sta char_y_offset
 
-;*** lcd ***
+  ;*** lcd ***
   lda #%10101000 ; put cursor at position 40
   jsr lcd_instruction
   inc kb_rptr
@@ -238,15 +257,24 @@ lcdbusy:
   rts
 
 lcd_init:
+  ;wait a bit before initializing the screen - helpful at higher clock speeds
+  jsr  Delay
+  jsr  Delay
+
+  ;see page 42 of https://eater.net/datasheets/HD44780.pdf
   lda #%00000010 ; Set 4-bit mode
   sta PORTB
+  jsr  Delay
   ora #E
   sta PORTB
+  jsr  Delay
   and #%00001111
   sta PORTB
+
   rts
 
 lcd_instruction:
+  ;send an instruction to the 2-line LCD
   jsr lcd_wait
   pha
   lsr
@@ -268,6 +296,7 @@ lcd_instruction:
   rts
 
 print_char_lcd:
+  ;print a character on the 2-line LCD
   jsr lcd_wait
   pha
   lsr
@@ -293,6 +322,7 @@ print_char_lcd:
 
 ; IRQ vector points here
 keyboard_interrupt:
+  ;handle a keypress
   pha
   txa
   pha
@@ -464,6 +494,7 @@ jump_to_PrintCharE:
 jump_to_PrintCharF:
   jmp PrintCharF
 
+
 print_char_vga:
   sta char_current_val
 
@@ -488,85 +519,45 @@ print_char_vga:
   beq jump_to_PrintChar8
   cmp #$39  ;9
   beq jump_to_PrintChar9
+
+  ;for now, only upper case is supported
   cmp #$41  ;A
   beq jump_to_PrintCharA
+  cmp #$61  ;a
+  beq jump_to_PrintCharA
+
   cmp #$42  ;B
   beq jump_to_PrintCharB
+  cmp #$62  ;b
+  beq jump_to_PrintCharB
+
   cmp #$43  ;C
   beq jump_to_PrintCharC
+  cmp #$63  ;c
+  beq jump_to_PrintCharC
+
   cmp #$44  ;D
   beq jump_to_PrintCharD
+  cmp #$64  ;d
+  beq jump_to_PrintCharD
+
   cmp #$45  ;E
   beq jump_to_PrintCharE
+  cmp #$65  ;e
+  beq jump_to_PrintCharE
+
   cmp #$46  ;F
   beq jump_to_PrintCharF
-  cmp #$47  ;G
-  beq jump_to_PrintCharG
-  cmp #$48  ;H
-  beq jump_to_PrintCharH
-  cmp #$49  ;I
-  beq jump_to_PrintCharI
-  cmp #$4A  ;J
-  beq jump_to_PrintCharJ
-  cmp #$4B  ;K
-  beq jump_to_PrintCharK
-  cmp #$4C  ;L
-  beq jump_to_PrintCharL
-  cmp #$4D  ;M
-  beq jump_to_PrintCharM
-  cmp #$4E  ;N
-  beq jump_to_PrintCharN
-  cmp #$4F  ;O
-  beq jump_to_PrintCharO
-  cmp #$50  ;P
-  beq jump_to_PrintCharP
-  cmp #$51  ;Q
-  beq jump_to_PrintCharQ
-  cmp #$52  ;R
-  beq jump_to_PrintCharR
-  cmp #$53  ;S
-  beq jump_to_PrintCharS
-  cmp #$54  ;T
-  beq jump_to_PrintCharT
-  cmp #$55  ;U
-  beq jump_to_PrintCharU
-  cmp #$56  ;V
-  beq jump_to_PrintCharV
-  cmp #$57  ;W
-  beq jump_to_PrintCharW
-  cmp #$58  ;X
-  beq jump_to_PrintCharX
-  cmp #$59  ;Y
-  beq jump_to_PrintCharY
-  cmp #$5A  ;Z
-  beq jump_to_PrintCharZ
-  cmp #$20  ;SPACE
-  beq jump_to_PrintCharSpace
-  cmp #$2E  ;PERIOD
-  beq jump_to_PrintCharPeriod
-  cmp #$21  ;EXCLAMATION
-  beq jump_to_PrintCharExclamation
-  cmp #$3F  ;QUESTION
-  beq jump_to_PrintCharQuestion
-  cmp #$2D  ;DASH
-  beq jump_to_PrintCharDash
-Next:
-  ;move the 'cursor' to the right by 7 pixels
-  inc char_y_offset
-  inc char_y_offset
-  inc char_y_offset
-  inc char_y_offset
-  inc char_y_offset
-  inc char_y_offset
-  ;inc char_y_offset
-  inx
-  jmp PrintStringLoop
+  cmp #$66  ;f
+  beq jump_to_PrintCharF
+
+  jmp print_char_vga_cont
 
 jump_to_PrintCharG:
   jmp PrintCharG
 jump_to_PrintCharH:
   jmp PrintCharH
-jump_to_PrintCharI:
+ jump_to_PrintCharI:
   jmp PrintCharI
 jump_to_PrintCharJ:
   jmp PrintCharJ
@@ -582,6 +573,136 @@ jump_to_PrintCharO:
   jmp PrintCharO
 jump_to_PrintCharP:
   jmp PrintCharP
+
+print_char_vga_cont:
+
+  cmp #$47  ;G
+  beq jump_to_PrintCharG
+  cmp #$67  ;g
+  beq jump_to_PrintCharG
+
+  cmp #$48  ;H
+  beq jump_to_PrintCharH
+  cmp #$68  ;h
+  beq jump_to_PrintCharH
+
+  cmp #$49  ;I
+  beq jump_to_PrintCharI
+  cmp #$69  ;i
+  beq jump_to_PrintCharI
+
+  cmp #$4A  ;J
+  beq jump_to_PrintCharJ
+  cmp #$6A  ;j
+  beq jump_to_PrintCharJ
+
+  cmp #$4B  ;K
+  beq jump_to_PrintCharK
+  cmp #$6B  ;k
+  beq jump_to_PrintCharK
+
+  cmp #$4C  ;L
+  beq jump_to_PrintCharL
+  cmp #$6C  ;l
+  beq jump_to_PrintCharL
+
+  cmp #$4D  ;M
+  beq jump_to_PrintCharM
+  cmp #$6D  ;m
+  beq jump_to_PrintCharM
+
+  cmp #$4E  ;N
+  beq jump_to_PrintCharN
+  cmp #$6E  ;n
+  beq jump_to_PrintCharN
+
+  cmp #$4F  ;O
+  beq jump_to_PrintCharO
+  cmp #$6F  ;o
+  beq jump_to_PrintCharO
+
+  cmp #$50  ;P
+  beq jump_to_PrintCharP
+  cmp #$70  ;p
+  beq jump_to_PrintCharP
+
+  cmp #$51  ;Q
+  beq jump_to_PrintCharQ
+  cmp #$71  ;q
+  beq jump_to_PrintCharQ
+
+  cmp #$52  ;R
+  beq jump_to_PrintCharR
+  cmp #$72  ;r
+  beq jump_to_PrintCharR
+
+  cmp #$53  ;S
+  beq jump_to_PrintCharS
+  cmp #$73  ;s
+  beq jump_to_PrintCharS
+
+  cmp #$54  ;T
+  beq jump_to_PrintCharT
+  cmp #$74  ;t
+  beq jump_to_PrintCharT
+
+  cmp #$55  ;U
+  beq jump_to_PrintCharU
+  cmp #$75  ;u
+  beq jump_to_PrintCharU
+
+  cmp #$56  ;V
+  beq jump_to_PrintCharV
+  cmp #$76  ;v
+  beq jump_to_PrintCharV
+
+  cmp #$57  ;W
+  beq jump_to_PrintCharW
+  cmp #$77  ;w
+  beq jump_to_PrintCharW
+
+  cmp #$58  ;X
+  beq jump_to_PrintCharX
+  cmp #$78  ;x
+  beq jump_to_PrintCharX
+
+  cmp #$59  ;Y
+  beq jump_to_PrintCharY
+  cmp #$79  ;y
+  beq jump_to_PrintCharY
+
+  cmp #$5A  ;Z
+  beq jump_to_PrintCharZ
+  cmp #$7A  ;z
+  beq jump_to_PrintCharZ
+
+  cmp #$20  ;SPACE
+  beq jump_to_PrintCharSpace
+  cmp #$2E  ;PERIOD
+  beq jump_to_PrintCharPeriod
+  cmp #$21  ;EXCLAMATION
+  beq jump_to_PrintCharExclamation
+  cmp #$2D  ;DASH
+  beq jump_to_PrintCharDash
+
+  ;cmp #$3F  ;QUESTION
+  ;if you got here, not other chars match, so print a question mark
+  jmp jump_to_PrintCharQuestion
+
+
+Next:
+  ;move the 'cursor' to the right by 7 pixels
+  inc char_y_offset
+  inc char_y_offset
+  inc char_y_offset
+  inc char_y_offset
+  inc char_y_offset
+  inc char_y_offset
+  ;inc char_y_offset
+  inx
+  jmp PrintStringLoop
+
+
 jump_to_PrintCharQ:
   jmp PrintCharQ
 jump_to_PrintCharR:
