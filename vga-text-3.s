@@ -4,7 +4,7 @@
     ; VGA base design by Ben Eater
     ; 2-line LCD in 4-bit (nibble) mode
     ; 6502 clock at 4.9 MHz, VGA clock at 10 MHz
-    ; This assembly code developed by *rehsd* with foundational elements from Ben Eater (others if noted in code)
+    ; This assembly code developed by rehsd with foundational elements from Ben Eater (others if noted in code)
     ; Last updated August 2021
     ; Assembly code compiled with vasm and uploaded to ROM on 6502 build
     ; Example command line to run:
