@@ -25,7 +25,25 @@ Memory map
 	1110 xxxx xxxx xxxx		E000-EFFF		6502 ROM Address Space
 	1111 xxxx xxxx xxxx		F000-FFFF		6502 ROM Address Space
 
-	
+Multiple VIAs
+
+	Address Line A13
+	PORT1B = $6000
+	PORT1A = $6001
+	DDR1B  = $6002
+	DDR1A  = $6003
+
+	Address Line A12
+	PORT2B = $5000
+	PORT2A = $5001
+	DDR2B  = $5002
+	DDR2A  = $5003
+
+	Address Line A11
+	PORT3B = $4800
+	PORT3A = $4801
+	DDR3B  = $4802
+	DDR3A  = $4803
 Colors
 
 	-6 outputs of U25 (74LS245) to 6 resistors - 2 red, 2 green, 2 blue
