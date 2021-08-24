@@ -1,3 +1,7 @@
+; Assembly code to be compiled with vasm - to create bin file for EEPROM programmer
+; Example command line to run:
+;	vasm6502_oldstyle.exe -Fbin -dotdir test_interrupts_3vias.s -o test_interrupts_3vias.bin
+
 PORT1B = $6000
 PORT1A = $6001
 DDR1B  = $6002
@@ -47,6 +51,7 @@ reset:
   sta PCR2
   sta PCR3
 
+  ;set all VIA ports as output
   lda #$ff
   sta DDR1B
   sta DDR1A
@@ -55,6 +60,7 @@ reset:
   sta DDR3B
   sta DDR3A
 
+  ;output an initial value (displayed on bar graphs)
   lda B2
   sta PORT1B
   sta PORT1A
@@ -68,6 +74,45 @@ reset:
 loop:
   jmp loop
 
+allTest:
+  lda B9
+  sta PORT1B
+  sta PORT1A
+  sta PORT2B
+  sta PORT2A
+  sta PORT3B
+  sta PORT3A
+
+  lda B1
+  sta PORT1B
+  sta PORT1A
+  lda B3
+  sta PORT2B
+  sta PORT2A
+  lda B5
+  sta PORT3B
+  sta PORT3A
+
+  lda B2
+  sta PORT1B
+  sta PORT1A
+  lda B4
+  sta PORT2B
+  sta PORT2A
+  lda B6
+  sta PORT3B
+  sta PORT3A
+
+  lda B10
+  sta PORT1B
+  sta PORT1A
+  sta PORT2B
+  sta PORT2A
+  sta PORT3B
+  sta PORT3A
+
+  rts
+
 VIA1_IRQ:
   lda B1
   sta PORT1B
@@ -77,14 +122,9 @@ VIA1_IRQ:
   sta PORT3B
   sta PORT3A
 
-  pla
-  tay
-  pla
-  tax
-  pla
-  rti
+  jmp irq_done
 
- VIA2_IRQ:
+VIA2_IRQ:
   lda B2
   sta PORT1B
   sta PORT1A
@@ -93,14 +133,9 @@ VIA1_IRQ:
   sta PORT3B
   sta PORT3A
 
-  pla
-  tay
-  pla
-  tax
-  pla
-  rti
+  jmp irq_done
 
- VIA3_IRQ:
+VIA3_IRQ:
   lda B3
   sta PORT1B
   sta PORT1A
@@ -109,12 +144,7 @@ VIA1_IRQ:
   sta PORT3B
   sta PORT3A
 
-  pla
-  tay
-  pla
-  tax
-  pla
-  rti
+  jmp irq_done
 
 nmi:
   rti
@@ -135,6 +165,8 @@ irq:
   BMI  VIA3_IRQ			; Branch if VIA3 is interrupt source
 
   ;Should never get here unless missing a BIT/BMI for the interrupt source
+
+irq_done:
   pla
   tay
   pla
