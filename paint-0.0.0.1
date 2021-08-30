@@ -50,6 +50,7 @@
 ; TO DO
     ; -Improve code commenting :)
     ; -ClearChar subroutine
+    ; -Take advantage of 65C02 new instructions (e.g., bra, bbs, phx phy plx ply)
     ; -General code optimization - removal of unecessary calls, better ways of solving problems, ...
 
 ;Variable declarations / memory-related
@@ -81,7 +82,10 @@ delayDurationHighByte   = $0030     ;Count from this number (high byte) to FF - 
 ;                         $62       Temporarily track incoming cursor y position during procedure call
 ;                         $63       FillRegion loop tracking columns
 ;                         $64       FillRegion loop tracking rows
-;                         $65       hexOutLookup
+;                         $65       print_hex_lcd, print_dec_lcd
+;                         $66       print_dec_lcd
+;                         $67       print_dec_lcd
+;                         $68       print_dec_lcd
 
 
 fill_region_start_x     = $A0       ;Horizontal pixel position, 0 to 99
@@ -543,6 +547,9 @@ key_pressed:
   cmp #$1b           ; escape - clear display
   beq esc_pressed
 
+  ;jsr print_hex_lcd    ;print ascii in hex
+  jsr print_dec_lcd    ;print ascii in dec
+
   jsr print_char_lcd
 
   ;*** vga ***
@@ -707,7 +714,6 @@ print_hex_lcd:
     ;convert scancode/ascii value/other hex to individual chars and display
     ;e.g., scancode = #$12 (left shift) but want to show '0x12' on LCD
     ;accumulator has the value of the scancode
-    ;https://www.daniweb.com/programming/software-development/threads/197766/help-printing-ascii-code
 
     ;put items on stack, so we can return them
     pha ;a to stack
@@ -743,6 +749,65 @@ print_hex_lcd:
     plx ;stack to x
     pla ;stack to a
     rts
+print_dec_lcd:
+    ;convert scancode/ascii value/other hex to individual chars (as decimals) and display
+    ;e.g., scancode = #$12 (left shift) but want to show '018' on LCD
+    ;accumulator has the value of the scancode
+
+    ;put items on stack, so we can return them
+    pha ;a to stack
+    phx ;x to stack
+    phy ;y to stack
+
+    sta $65     ;store A so we can keep using original value
+    lda #0
+    sta $66     ;100s
+    sta $67     ;10s
+    sta $68     ;1s
+
+    HundredsLoop:
+        lda $65
+        cmp #100             ; compare 100
+        bcc TensLoop         ; if binary < 100, all done with hundreds digit
+        lda $65
+        sec
+        sbc #100
+        sta $65             ; subtract 100 and store remainder
+        inc $66             ; increment the digit result
+        jmp HundredsLoop
+
+    TensLoop:
+        lda $65
+        cmp #10              ; compare 10
+        bcc OnesLoop         ; if binary < 10, all done with tens digit
+        lda $65
+        sec
+        sbc #10
+        sta $65              ; subtract 10, store remainder
+        inc $67              ; increment the digit result
+        jmp TensLoop
+
+    OnesLoop:
+        lda $65
+        sta $68        ; copy what is remaining for singles digit
+
+    ;output the three digits
+    ldy $66
+    lda hexOutLookup, y
+    jsr print_char_lcd
+    ldy $67
+    lda hexOutLookup, y
+    jsr print_char_lcd
+    ldy $68
+    lda hexOutLookup, y
+    jsr print_char_lcd
+    
+    ;return items from stack
+    ply ;stack to y
+    plx ;stack to x
+    pla ;stack to a
+    rts
+
 keyboard_interrupt:
   ;handle a keypress
   pha
@@ -778,7 +843,8 @@ read_key:
   beq key_release ; set the releasing bit
 
   ;testing - print hex value of accumulator (the keyboard scancode) to the LCD - after key release above is checked, so we do not clutter the output with key releases
-  jsr print_hex_lcd
+  ;jsr print_hex_lcd
+  ;jsr print_dec_lcd
 
   cmp #$12        ; left shift
   beq shift_down
@@ -1332,6 +1398,8 @@ message6 db "  AND COLOR", 0
 message7 db "6502 PLUS", 0
 message8 db "    V-G-A", 0
 hexOutLookup db "0123456789ABCDEF", 0
+;decOutLookup db "000001002003004005006007008009010011012013014015016017018019020021022023024025026027028029030031032033034035036037038039040041042043044045046047048049050051052053054055056057058059060061062063064065066067068069070071072073074075076077078079080081082083084085086087088089090091092093094095096097098099100101102103104105106107108109110111112113114115116117118119120121122123124125126127128129130131132133134135136137138139140141142143144145146147148149150151152153154155156157158159160161162163164165166167168169170171172173174175176177178179180181182183184185186187188189190191192193194195196197198199200201202203204205206207208209210211212213214215216217218219220221222223224225226227228229230231232233234235236237238239240241242243244245246247248249250251252253254255", 0
+
 
 ;Char pixel data
   ; Represent a 5x7 font (35 points/bits of data required)
