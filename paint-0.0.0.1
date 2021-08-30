@@ -81,6 +81,7 @@ delayDurationHighByte   = $0030     ;Count from this number (high byte) to FF - 
 ;                         $62       Temporarily track incoming cursor y position during procedure call
 ;                         $63       FillRegion loop tracking columns
 ;                         $64       FillRegion loop tracking rows
+;                         $65       hexOutLookup
 
 
 fill_region_start_x     = $A0       ;Horizontal pixel position, 0 to 99
@@ -702,12 +703,45 @@ print_char_lcd:
   eor #E          ; Clear E bit
   sta PORTB
   rts
-print_scancode_lcd:
-    ;how to convert scancode to individual chars and display?
+print_hex_lcd:
+    ;convert scancode/ascii value/other hex to individual chars and display
     ;e.g., scancode = #$12 (left shift) but want to show '0x12' on LCD
     ;accumulator has the value of the scancode
-    ;sta $70
-    ;lda #70
+    ;https://www.daniweb.com/programming/software-development/threads/197766/help-printing-ascii-code
+
+    ;put items on stack, so we can return them
+    pha ;a to stack
+    phx ;x to stack
+    phy ;y to stack
+
+    sta $65     ;store A so we can keep using original value
+    lda #$30    ;'0'
+    jsr print_char_lcd
+    lda #$78    ;'x'
+    jsr print_char_lcd
+
+    ;high nibble
+    lda $65
+    and #%11110000
+    lsr ;shift high nibble to low nibble
+    lsr
+    lsr
+    lsr
+    tay
+    lda hexOutLookup, y
+    jsr print_char_lcd
+
+    ;low nibble
+    lda $65
+    and #%00001111
+    tay
+    lda hexOutLookup, y
+    jsr print_char_lcd
+
+    ;return items from stack
+    ply ;stack to y
+    plx ;stack to x
+    pla ;stack to a
     rts
 keyboard_interrupt:
   ;handle a keypress
@@ -739,8 +773,13 @@ shift_up:
   jmp exit
 read_key:
   lda PORTA
+
   cmp #$f0        ; if releasing a key
   beq key_release ; set the releasing bit
+
+  ;testing - print hex value of accumulator (the keyboard scancode) to the LCD - after key release above is checked, so we do not clutter the output with key releases
+  jsr print_hex_lcd
+
   cmp #$12        ; left shift
   beq shift_down
   cmp #$59        ; right shift
@@ -1292,6 +1331,7 @@ message5 db "SET POSITION", 0
 message6 db "  AND COLOR", 0
 message7 db "6502 PLUS", 0
 message8 db "    V-G-A", 0
+hexOutLookup db "0123456789ABCDEF", 0
 
 ;Char pixel data
   ; Represent a 5x7 font (35 points/bits of data required)
