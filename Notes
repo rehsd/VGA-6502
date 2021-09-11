@@ -72,6 +72,11 @@ Multiple VIAs
 	IFR5   = $420D
 	IER5   = $420E
 	
+ACIA
+
+	Address Line A08		100000100000000
+	       = $4100
+	
 Colors
 
 	-6 outputs of U25 (74LS245) to 6 resistors - 2 red, 2 green, 2 blue
