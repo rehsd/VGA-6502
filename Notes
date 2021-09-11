@@ -27,23 +27,51 @@ Memory map
 
 Multiple VIAs
 
-	Address Line A13
+	Address Line A13		110000000000000
 	PORT1B = $6000
 	PORT1A = $6001
 	DDR1B  = $6002
 	DDR1A  = $6003
+	PCR1   = $600C
+	IFR1   = $600D
+	IER1   = $600E
 
-	Address Line A12
+	Address Line A12		101000000000000
 	PORT2B = $5000
 	PORT2A = $5001
 	DDR2B  = $5002
 	DDR2A  = $5003
+	PCR2   = $500C
+	IFR2   = $500D
+	IER2   = $500E
 
-	Address Line A11
+	Address Line A11		100100000000000
 	PORT3B = $4800
 	PORT3A = $4801
 	DDR3B  = $4802
 	DDR3A  = $4803
+	PCR3   = $480C
+	IFR3   = $480D
+	IER3   = $480E
+
+	Address Lin A10			100010000000000
+	PORT4B = $4400
+	PORT4A = $4401
+	DDR4B  = $4402
+	DDR4A  = $4403
+	PCR4   = $440C
+	IFR4   = $440D
+	IER4   = $440E
+	
+	Address Line A09		100001000000000
+	PORT5B = $4200
+	PORT5A = $4201
+	DDR5B  = $4202
+	DDR5A  = $4203
+	PCR5   = $420C
+	IFR5   = $420D
+	IER5   = $420E
+	
 Colors
 
 	-6 outputs of U25 (74LS245) to 6 resistors - 2 red, 2 green, 2 blue
