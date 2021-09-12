@@ -54,7 +54,7 @@ Multiple VIAs
 	IFR3   = $480D
 	IER3   = $480E
 
-	Address Lin A10			100010000000000
+	Address Line A10			100010000000000
 	PORT4B = $4400
 	PORT4A = $4401
 	DDR4B  = $4402
