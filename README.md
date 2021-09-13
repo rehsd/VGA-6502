@@ -1,6 +1,8 @@
 # VGA-6502
 6502+VGA+PS2 project (assembly, PCBs) to output to Ben Eater's "World's worst video card."
 
+** Files are posted as-is. No warranties or guarantees of any sort. All code and PCB designs should be validated prior to use. ***
+
 I've been using these projects to learn 6502 assembly (and assembly in general). While the code is likely far from optimal, possibly, it will be helpful to some people.
 
 
