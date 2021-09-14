@@ -4,7 +4,7 @@
     ; Last updated September 2021
     ; Assembly code compiled with vasm and uploaded to ROM on 6502 build
     ; Example build command line:
-    ;	vasm6502_oldstyle.exe -Fbin -dotdir -wdc02 g4b.s -o g4b.bin
+    ;	vasm6502_oldstyle.exe -Fbin -dotdir -wdc02 source.s -o rom.bin
 
     ; *** Hardware config ***
     ; W65C02 (Ben), 4.9 MHz
