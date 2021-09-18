@@ -20,3 +20,5 @@ vga-text-3.s      -->   https://www.reddit.com/r/beneater/comments/p2n07u/finall
 paint-0.0.0.1     --> https://www.reddit.com/r/beneater/comments/pe1hfx/6502ps2vga_paint_0001/
 
 VGA for 6502 rev1.1 - EasyEDA.zip --> EasyEDA PCB project for VGA card.
+
+6502 VGA PS2 5VIA - rev1.1 - EasyEDA.zip --> EasyEDA PCB project for 6502+VGA+PS2+5VIA. https://www.reddit.com/r/beneater/comments/pqj20i/step_4_everything_working_time_for_a/
