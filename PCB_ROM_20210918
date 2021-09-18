@@ -7,7 +7,7 @@
     ;	vasm6502_oldstyle.exe -Fbin -dotdir -wdc02 PCB_ROM.s -o pcb_rom.bin
 
     ; *** Hardware config ***
-    ; W65C02 (Ben), 4.9 MHz
+    ; W65C02 (Ben),  5.0 MHz
     ; VGA circuit (Ben), 10.0 MHz
     ; PS2 keyboard circuit (Ben)
     ; Joystick circuit
