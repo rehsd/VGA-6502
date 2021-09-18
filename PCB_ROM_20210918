@@ -217,7 +217,7 @@ JOYSTICK_LEFT           = %00010000
   .org $8000
 reset:
   ;*** ps2lcd ***
-  ldx #$ff          ;TO DO verify if this is needed
+  ldx #$ff          ;init stack
   txs
 
   ;see page 42 of https://eater.net/datasheets/HD44780.pdf
