@@ -10,9 +10,9 @@
     ; W65C02 (Ben),  5.0 MHz
     ; VGA circuit (Ben), 10.0 MHz
     ; PS2 keyboard circuit (Ben)
-    ; Joystick circuit
+    ; Joystick circuit (not on PCB)
     ; VIA1 PortA - PS2 keyboard input
-    ; VIA1 PortB - 20x04 LCD in 4-bit (nibble) mode
+    ; VIA1 PortB - 16x02 LCD in 4-bit (nibble) mode
     ; VIA2 PortA - 
     ; VIA2 PortB - Joystick input
     ; VIA3 PortA - 
