@@ -1,0 +1,190 @@
+;routine to scan EnableB (R7) on AY-3-8910 ICs with (likley) faulty mixer control. 
+;Can get output on channels A and C, but never B.
+;ICs not behaving according to tone enable truth table in spec sheet or data manual
+
+;Tone enable truth table
+;R7 bits B2, B1, B0 -- when bit low, channel C, B, A enabled accordingly
+;Example: B2B1B0 = '000' should result in all channels enabled.
+;Example: B2B1B0 = '011' should result in channel C enabled, and B,A disabled
+
+;Actual behavior from batch of Ebay '8910s:
+;B2 B1 B0      Working Channel(s)     Should be
+; 0  0  0      A                      C B A
+; 0  0  1      A                      C B
+; 0  1  0      A                      C   A
+; 0  1  1      C                      C               << This seems to be the only valid config
+; 1  X  X      -none-                                 << Anytime B2 is set, no output from any channel
+
+SweepForChB:
+    lda #$60
+    sta delayDurationHighByte
+
+    ;init VIA
+    lda #$FF
+    sta DDR4A
+    sta DDR4B
+
+    ;init AY38910
+    lda #(AY2_A9_B) 
+    sta PORT4B
+
+    ldx #$00
+
+    soundLoopTop:
+        
+        ;init tune
+        lda #<SND_RESET
+        sta TUNE_PTR_LO
+        lda #>SND_RESET
+        sta TUNE_PTR_HI
+        jsr AY1_PlayTune
+
+        lda #%00000001 ; Clear display
+        jsr lcd_instruction
+
+        lda #$41
+        jsr print_char_lcd
+        
+            ;tone values	-- setting values for all three channels to 500Hz
+                lda #$00
+                jsr AY1_setreg
+                lda #$FA
+                jsr AY1_writedata
+
+                lda #$01
+                jsr AY1_setreg
+                lda #$00
+                jsr AY1_writedata
+
+                lda #$02
+                jsr AY1_setreg
+                lda #$FA
+                jsr AY1_writedata
+
+                lda #$03
+                jsr AY1_setreg
+                lda #$00
+                jsr AY1_writedata
+
+                lda #$04
+                jsr AY1_setreg
+                lda #$FA
+                jsr AY1_writedata
+
+                lda #$05
+                jsr AY1_setreg
+                lda #$00
+                jsr AY1_writedata
+
+            ;***** loop val
+            lda #$07
+            jsr AY1_setreg
+            txa ;put counter in A (sweep all values for register 7, EnableB, to see if ChB has output at any point)
+
+            jsr print_hex_lcd
+            jsr AY1_writedata
+
+            lda #$0A              ;ChA audio off
+            jsr AY1_setreg
+            lda #$00
+            jsr AY1_writedata
+
+            lda #$0B              ;ChB audio max
+            jsr AY1_setreg
+            lda #$0F
+            jsr AY1_writedata
+        
+            lda #$0C              ;ChC audio off
+            jsr AY1_setreg
+            lda #$00
+            jsr AY1_writedata
+
+
+        jsr Delay
+        jsr Delay
+        jsr Delay
+
+        inx
+        txa
+        cmp #$FF
+        beq soundLoopOut
+        jmp soundLoopTop
+
+    soundLoopOut:
+   rts
+   
+   
+AY1_PlayTune:
+   ldy #0
+AY1_play_loop:
+   lda (TUNE_PTR_LO), Y
+   cmp #$FF
+   bne AY1_play_next
+   rts
+AY1_play_next:
+   jsr AY1_setreg
+   iny
+   lda (TUNE_PTR_LO), Y
+   cmp #$FF
+   bne AY1_play_next2
+   rts
+AY1_play_next2:
+   jsr AY1_writedata
+   iny
+   jmp AY1_play_loop
+   rts
+AY1_setreg:
+	jsr AY1_inactive     ; NACT
+	sta PORT4A      
+	jsr AY1_latch        ; INTAK
+	jsr AY1_inactive     ; NACT
+	rts
+AY1_writedata:
+	jsr AY1_inactive     ; NACT
+	sta PORT4A
+	jsr AY1_write           ; DWS
+	jsr AY1_inactive
+	rts
+AY1_inactive:        ; NACT
+	; BDIR  LOW
+	; BC1   LOW
+	phx         
+	ldx #0 
+	stx PORT4B
+	plx         
+	rts
+AY1_latch:           ; INTAK
+	; BDIR  HIGH
+	; BC1   HIGH
+	phx         
+	ldx #(AY1_BDIR | AY1_BC1)
+	stx PORT4B
+	plx         
+	rts
+AY1_write:           ; DWS
+	; BDIR  HIGH
+	; BC1   LOW
+	phx         
+	ldx #(AY1_BDIR) 
+	stx PORT4B
+	plx         
+	rts
+
+SND_RESET:
+   .BYTE $00, $00           ;ChanA tone period fine tune
+   .BYTE $01, $00           ;ChanA tone period coarse tune
+   .BYTE $02, $00           ;ChanB tone period fine tune      
+   .BYTE $03, $00           ;ChanB tone period coarse tune
+   .BYTE $04, $00           ;ChanC tone period fine tune  
+   .BYTE $05, $00           ;ChanC tone period coarse tune
+   .BYTE $06, $00           ;Noise Period
+   .BYTE $07, $38           ;EnableB        	all channels enabled 0x38=00111000
+   .BYTE $0A, $0F           ;ChanA amplitude    0F = fixed, max volume
+   .BYTE $0B, $0F           ;ChanB amplitude
+   .BYTE $0C, $0F           ;ChanB amplitude
+   .BYTE $0D, $00           ;Envelope period fine tune
+   .BYTE $0E, $00           ;Envelope period coarse tune
+   .BYTE $0F, $00           ;Envelope shape cycle
+   .BYTE $10, $00           ;IO Port A
+   .BYTE $11, $00           ;IO Port B
+   .BYTE $FF, $FF           ;EOF
