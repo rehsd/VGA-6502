@@ -41,10 +41,7 @@ SweepForChB:
 
         lda #%00000001 ; Clear display
         jsr lcd_instruction
-
-        lda #$41
-        jsr print_char_lcd
-        
+       
             ;tone values	-- setting values for all three channels to 500Hz
                 lda #$00
                 jsr AY1_setreg
