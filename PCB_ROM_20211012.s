@@ -20,7 +20,7 @@
     ; VIA3 PortB - SPI control / clock (using external shift registers)
     ; VIA4 PortA - AY38910 audio data
     ; VIA4 PortB - AY38910 audio control
-    ; VIA5 PortA - 
+    ; VIA5 PortA - USB mouse (through Arduino Mega)
     ; VIA5 PortB - USB mouse (through Arduino Mega)
     ; W65C51N ACIA at $4100 (data direct from 6502 data bus)
     ; *** SPI devices ***
