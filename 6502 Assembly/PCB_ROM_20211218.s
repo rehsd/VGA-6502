@@ -319,8 +319,8 @@ MOUSE_LEFT               = %00011100
 MOUSE_LEFT_UP            = %00100000     
 
 MOUSE_CLICK_LEFT         = %00000001
-MOUSE_CLICK_RIGHT        = %00000010     
-MOUSE_CLICK_MIDDLE       = %00000011     
+MOUSE_CLICK_MIDDLE       = %00000010     
+MOUSE_CLICK_RIGHT        = %00000011     
 
 ;VIA2                  ;PORTA
 SPI_SCK                = %00000001      ;Used for separate SCK on devices without OE, such as SPI 8 char 7-segment LED display with MAX7219
