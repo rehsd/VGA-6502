@@ -36,6 +36,7 @@
 #define PIN_INTERRUPT       A15     //raise interrupt on VIA (bring LOW for interrupt)
 
 #define INTERRUPT_DURTION_MILLIS    6 
+#define MOUSE_SENSITIVIY            2
 
 unsigned long lastInterruptMillis = 0;
 
@@ -82,6 +83,15 @@ void MouseRptParser::OnMouseMove(MOUSEINFO* mi)
     X += dx;
     Y += dy;
     
+    Serial.print("dx=");
+    Serial.print(dx);
+    Serial.print(" dy=");
+    Serial.print(dy);
+    Serial.print(" X=");
+    Serial.print(X);
+    Serial.print(" Y=");
+    Serial.println(Y);
+    
     //reset bits
     digitalWrite(PIN_4, LOW);
     digitalWrite(PIN_8, LOW);
@@ -89,7 +99,34 @@ void MouseRptParser::OnMouseMove(MOUSEINFO* mi)
     digitalWrite(PIN_32, LOW);
 
 
-    if (dx > 0 && dy > 0)           //rightdown
+    if (dx < 0 && dy >-MOUSE_SENSITIVIY && dy < MOUSE_SENSITIVIY)                //left
+    {
+        Serial.println("move left");
+        digitalWrite(PIN_16, HIGH);
+        digitalWrite(PIN_8, HIGH);
+        digitalWrite(PIN_4, HIGH);
+    }
+    else if (dy > 0 && dx > -MOUSE_SENSITIVIY && dx < MOUSE_SENSITIVIY)                //down
+    {
+        Serial.println("move down");
+        digitalWrite(PIN_16, HIGH);
+        digitalWrite(PIN_4, HIGH);
+    }
+
+    else if (dx > 0 && dy > -MOUSE_SENSITIVIY && dy < MOUSE_SENSITIVIY)                //right
+    {
+        Serial.println("move right");
+        digitalWrite(PIN_8, HIGH);
+        digitalWrite(PIN_4, HIGH);
+    }
+
+    else if (dy < 0 && dx > -MOUSE_SENSITIVIY && dx < MOUSE_SENSITIVIY)                //up
+    {
+        Serial.println("move up");
+        digitalWrite(PIN_4, HIGH);
+    }
+
+    else if (dx > 0 && dy > 0)           //rightdown
     {
         Serial.println("move right down");
         digitalWrite(PIN_16, HIGH);
@@ -110,32 +147,6 @@ void MouseRptParser::OnMouseMove(MOUSEINFO* mi)
         Serial.println("move left up"); 
         digitalWrite(PIN_32, HIGH);
     }
-    else if (dx < 0)                //left
-    {
-        Serial.println("move left");
-        digitalWrite(PIN_16, HIGH);
-        digitalWrite(PIN_8, HIGH);
-        digitalWrite(PIN_4, HIGH);
-    }
-    else if (dx > 0)                //right
-    {
-        Serial.println("move right");
-        digitalWrite(PIN_8, HIGH);
-        digitalWrite(PIN_4, HIGH);
-    }
-    else if (dy > 0)                //down
-    {
-        Serial.println("move down");
-        digitalWrite(PIN_16, HIGH);
-        digitalWrite(PIN_4, HIGH);
-    }
-    else if (dy < 0)                //up
-    {
-        Serial.println("move up"); 
-        digitalWrite(PIN_4, HIGH);
-    }
-
-
 
     digitalWrite(PIN_INTERRUPT, LOW);
     lastInterruptMillis = millis();
