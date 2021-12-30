@@ -2463,6 +2463,9 @@ VIA4_CB1_handler:       ;joystick on sound card
     lda #$0F    ;0F = Register for I/O port B - read address at previously specified ROM address
     jsr AY3_setreg
     jsr AY3_readdata    ;Read result in A register  - using bits 7 downto 3 for joystick direction and button
+    
+    cmp #$FF                    ;no button or joystick move active  -bits are high if unset, pulled low when set
+    beq VIA4_CB1_handler_OUT
 
     pha
     eor #$FF        ;flip bits
@@ -2472,6 +2475,7 @@ VIA4_CB1_handler:       ;joystick on sound card
     lda #$40                ;fire rocket sound
     sta Sound_ROW_JumpTo
     jsr PlayFromROM
+    jsr Delay00
 
     NoFire:
     pla
@@ -2484,6 +2488,9 @@ VIA4_CB1_handler:       ;joystick on sound card
     lda #%00011010    ;cmd: player one move fire - toggle interrupt bit
     sta PORT5A
 
+    jmp VIA4_CB1_handler    ;support holding down button/joystick
+
+    VIA4_CB1_handler_OUT:
     bit PORT4B      ;clear interrupt by reading the port
     jmp irq_done
 VIA4_CB2_handler:       ;FPGA VGA to 6502 interrupt (status update, e.g., sprite collission)
