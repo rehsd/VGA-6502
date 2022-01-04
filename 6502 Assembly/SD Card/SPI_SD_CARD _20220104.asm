@@ -1,6 +1,6 @@
 ;Comments
   ;SPI SD Card routines
-  ;Code based on SPI Card by rehsd. See https://www.rehsdonline.com/post/working-on-game-music-need-storage for additional details.
+  ;Code based on SPI Card by rehsd.
   ;Using HiLetgo Micro SD TF Card Reader - https://www.amazon.com/gp/product/B07BJ2P6X6
   ;
   ;SPI LED example from https://github.com/rehsd/VGA-6502/blob/main/6502%20Assembly/PCB_ROM_20211008.s
