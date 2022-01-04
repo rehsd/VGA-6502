@@ -126,6 +126,17 @@ SPI_SDCard_Testing:
       jmp try55again
     jsr Delay40
 
+    jsr SPI_SDCard_SendCommand1
+      jsr PrintResult
+    jsr Delay40
+    ;try it two more times
+    jsr SPI_SDCard_SendCommand1
+      jsr PrintResult
+    jsr Delay40
+    jsr SPI_SDCard_SendCommand1
+      jsr PrintResult
+    jsr Delay40
+
     SDCardInitComplete:
       jsr PrintString_FPGA_InitComplete
     
@@ -140,6 +151,18 @@ SPI_SDCard_Testing:
 SDCardFail:
     jsr PrintString_FPGA_Failure
 
+    ;try CMD1
+    jsr SPI_SDCard_SendCommand1
+      jsr PrintResult
+    jsr Delay40
+    ;try it two more times
+    jsr SPI_SDCard_SendCommand1
+      jsr PrintResult
+    jsr Delay40
+    jsr SPI_SDCard_SendCommand1
+      jsr PrintResult
+    jsr Delay40
+    
     ;for testing, try to read bytes to see what happens
     jsr SPI_SDCard_ReadBytes
   rts
@@ -184,6 +207,41 @@ SPI_SDCard_SendCommand0:
     cmp #$01
     ;bne Initfailed
 
+  rts
+SPI_SDCard_SendCommand1:
+  lda #<cmd1_bytes
+  sta zp_sd_cmd_address
+  lda #>cmd1_bytes
+  sta zp_sd_cmd_address+1
+
+  jsr PrintString_FPGA_SendCmd  
+  lda #$5B  ;[
+  jsr print_char_FPGA
+  lda #$31  ;1
+  jsr print_char_FPGA
+  lda #$5D  ;]
+  jsr print_char_FPGA
+  lda #$20  ;' '
+  jsr print_char_FPGA
+  jsr DelayC0
+
+  ldy #0
+  SPI_SDCard_SendCommand1_loop:
+      lda (zp_sd_cmd_address),y
+      sta SPI_SDCard_Next_Command
+      jsr print_hex_FPGA
+      jsr SPI_SDCard_SendCommand
+      iny
+      tya
+      cmp #$06    ;iterate loop a total of six times
+      bne SPI_SDCard_SendCommand1_loop
+
+  ;jsr SPI_SDCard_SendExtraClocks
+  jsr newline_fpga
+  jsr SPI_SDCard_waitresult
+  ; Expect status response $01 (not initialized)
+  cmp #$01
+  ;bne Initfailed
   rts
 SPI_SDCard_SendCommand8:
     ;.cmd8 ; SEND_IF_COND - tell the card how we want it to operate (3.3V, etc)
@@ -329,27 +387,27 @@ SPI_SDCard_Init:
 
     //MOSI high
     jsr Set_MOSI_High    
-    ;ldx #80     ;need 80 clock cycles for SD Card start up
-    ldx #$FF      ;testing
+    ldx #100     ;need 80 clock cycles for SD Card start up
+    ;ldx #$FF      ;testing
     SPI_SDCard_Init_LoopTop:
         ;cycle 80 times
 
         ;CS/OEB
-        lda #(SCK | SPI_DEV5_SDCARD)
+        ;lda #(SCK | SPI_DEV5_SDCARD)
         ;or no CS/OEB
-        ;lda #(SCK)
+        lda #(SCK)
 
         sta PORT3B
         lda #(SPI_SCK | OEB595)     ;Keep 595 turned off until we are reading back in from SPI
         sta PORT2A
-        jsr DelayC0                     ;need to test different delays
+        jsr DelayA0                     ;need to test different delays
 
         ;lda #(SPI_DEV5_SDCARD)
         lda #0
         sta PORT3B
         lda #(OEB595)
         sta PORT2A
-        jsr DelayC0                     ;need to test different delays
+        jsr DelayA0                     ;need to test different delays
 
         dex
         bne SPI_SDCard_Init_LoopTop
@@ -1116,8 +1174,10 @@ messageInitComplete:  .asciiz   "Initialization complete."
 messageReadingBytes:  .asciiz   "Reading bytes"
 
 ;Command sequences
-cmd0_bytes
+cmd0_bytes    ;0x40 + command number
   .byte $40, $00, $00, $00, $00, $95
+cmd1_bytes
+  .byte $41, $00, $00, $00, $00, $F9
 cmd8_bytes
   .byte $48, $00, $00, $01, $aa, $87
 cmd55_bytes
