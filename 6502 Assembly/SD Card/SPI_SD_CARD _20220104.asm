@@ -71,14 +71,17 @@ SPI_SDCard_Testing:
     lda #0
     sta PORT3B
 
-    jsr DelayC0 ;important
+    try0:
+      jsr DelayC0 ;important
+      jsr CS_Enable
+      jsr SPI_SDCard_SendCommand0
+        jsr CS_Disable
+        jsr PrintResult
+        cmp #$01
+        bne try0
+      jsr Delay40
 
-    jsr SPI_SDCard_SendCommand0
-      jsr PrintResult
-    jsr Delay40
-
-    jsr ToggleCS
-
+    jsr CS_Enable
     jsr SPI_SDCard_SendCommand8
       jsr PrintResult
 
@@ -91,36 +94,30 @@ SPI_SDCard_Testing:
       jsr Delay80
       jsr SPI_SDCard_ReceiveByte
       jsr Delay80
+    jsr CS_Disable
     jsr Delay40
 
-    try55again:
+    try55:
+    jsr CS_Enable
     jsr SPI_SDCard_SendCommand55
+    jsr CS_Disable
     jsr PrintResult
+    ;jsr Delay40
 
-    jsr Delay40
-
+    try41:
+    jsr CS_Enable
     jsr SPI_SDCard_SendCommand41
+      jsr CS_Disable
       jsr PrintResult
 
       ;should have a result of $0 if successful
       cmp #$00
       beq SDCardInitComplete
       ;cmp #$01    ;if not initialized and if received a 01, give it some time and try again - any other result is an error
-      cmp #$FE    ;arbitrary value... just continue to fail (getting 01's consistently)
+      cmp #$05    ;testing
       bne SDCardFail
-      jsr Delay00
-      jmp try55again
-    jsr Delay40
-
-    jsr SPI_SDCard_SendCommand1
-      jsr PrintResult
-    jsr Delay40
-    ;try it two more times
-    jsr SPI_SDCard_SendCommand1
-      jsr PrintResult
-    jsr Delay40
-    jsr SPI_SDCard_SendCommand1
-      jsr PrintResult
+      ;jsr Delay00
+      bra try55
     jsr Delay40
 
     SDCardInitComplete:
@@ -134,6 +131,94 @@ SPI_SDCard_Testing:
     pla ;stack to a
     rts
 
+SDCardFail:
+    jsr PrintString_FPGA_Failure
+
+    ;try CMD1
+    ;jsr SPI_SDCard_SendCommand1
+    ;  jsr PrintResult
+    ;jsr Delay40
+   
+
+    ;for testing, try to read bytes to see what happens
+    ;jsr SPI_SDCard_ReadBytes
+  rts
+CS_Enable:
+    pha
+    jsr SendGarbageByte
+    lda #(SPI_DEV5_SDCARD)
+    sta PORT3B
+    jsr SendGarbageByte
+    pla
+    rts
+CS_Disable:
+    pha
+    jsr SendGarbageByte
+    lda #0  ;No SPI_DEV5_SDCARD
+    sta PORT3B
+    jsr SendGarbageByte
+    pla
+    rts
+SendGarbageByte:
+    pha
+    ;cycle the clock, doesn't matter what data is being sent
+    lda #(SPI_SCK | OEB595)
+    sta PORT2A
+    jsr DelayF0 
+    lda #(OEB595)
+    sta PORT2A
+    jsr DelayF0 
+
+    lda #(SPI_SCK | OEB595)
+    sta PORT2A
+    jsr DelayF0 
+    lda #(OEB595)
+    sta PORT2A
+    jsr DelayF0 
+    
+    lda #(SPI_SCK | OEB595)
+    sta PORT2A
+    jsr DelayF0 
+    lda #(OEB595)
+    sta PORT2A
+    jsr DelayF0 
+
+    lda #(SPI_SCK | OEB595)
+    sta PORT2A
+    jsr DelayF0 
+    lda #(OEB595)
+    sta PORT2A
+    jsr DelayF0 
+
+    lda #(SPI_SCK | OEB595)
+    sta PORT2A
+    jsr DelayF0 
+    lda #(OEB595)
+    sta PORT2A
+    jsr DelayF0 
+
+    lda #(SPI_SCK | OEB595)
+    sta PORT2A
+    jsr DelayF0 
+    lda #(OEB595)
+    sta PORT2A
+    jsr DelayF0 
+
+    lda #(SPI_SCK | OEB595)
+    sta PORT2A
+    jsr DelayF0 
+    lda #(OEB595)
+    sta PORT2A
+    jsr DelayF0 
+
+    lda #(SPI_SCK | OEB595)
+    sta PORT2A
+    jsr DelayF0 
+    lda #(OEB595)
+    sta PORT2A
+    jsr DelayF0 
+    pla
+  rts
 ToggleCS:
     pha
 
@@ -153,30 +238,12 @@ ToggleCS:
 
     pla
   rts
-SDCardFail:
-    jsr PrintString_FPGA_Failure
-
-    ;try CMD1
-    jsr SPI_SDCard_SendCommand1
-      jsr PrintResult
-    jsr Delay40
-    ;try it two more times
-    jsr SPI_SDCard_SendCommand1
-      jsr PrintResult
-    jsr Delay40
-    jsr SPI_SDCard_SendCommand1
-      jsr PrintResult
-    jsr Delay40
-
-    ;for testing, try to read bytes to see what happens
-    jsr SPI_SDCard_ReadBytes
-  rts
 
 ;Separate command routines that are essentially the same
 ;Can consolidate later... left this way for initiat prototyping and debuggin
 SPI_SDCard_SendCommand0:
     ;.cmd0 ; GO_IDLE_STATE - resets card to idle state, and SPI mode
-    jsr ToggleCS
+    ;jsr ToggleCS
     
     
     lda #<cmd0_bytes
@@ -217,7 +284,7 @@ SPI_SDCard_SendCommand0:
 
   rts
 SPI_SDCard_SendCommand1:
-    jsr ToggleCS
+    ;jsr ToggleCS
   
     lda #<cmd1_bytes
     sta zp_sd_cmd_address
@@ -254,15 +321,11 @@ SPI_SDCard_SendCommand1:
     ;bne Initfailed
     rts
 SPI_SDCard_SendCommand8:
-    jsr ToggleCS
-    
     ;.cmd8 ; SEND_IF_COND - tell the card how we want it to operate (3.3V, etc)
     lda #<cmd8_bytes
     sta zp_sd_cmd_address
     lda #>cmd8_bytes
     sta zp_sd_cmd_address+1
-
-
 
     jsr PrintString_FPGA_SendCmd  
 
@@ -295,8 +358,6 @@ SPI_SDCard_SendCommand8:
 
   rts
 SPI_SDCard_SendCommand55:
-    jsr ToggleCS
-    
     ;.cmd55 ; APP_CMD - required prefix for ACMD commands
     lda #<cmd55_bytes
     sta zp_sd_cmd_address
@@ -304,7 +365,6 @@ SPI_SDCard_SendCommand55:
     sta zp_sd_cmd_address+1
 
     jsr PrintString_FPGA_SendCmd  
-
 
     lda #$5B  ;[
     jsr print_char_FPGA
@@ -336,7 +396,7 @@ SPI_SDCard_SendCommand55:
 
   rts
 SPI_SDCard_SendCommand41:
-    jsr ToggleCS
+    ;jsr ToggleCS
     
     ;.cmd41 ; APP_SEND_OP_COND - send operating conditions, initialize car
     lda #<cmd41_bytes
@@ -1196,9 +1256,8 @@ cmd1_bytes
   .byte $41, $00, $00, $00, $00, $F9
 cmd8_bytes
   .byte $48, $00, $00, $01, $aa, $87
-cmd55_bytes
-  ;.byte $77, $00, $00, $00, $00, $01
-  .byte $77, $00, $00, $00, $00, $65
 cmd41_bytes
-  ;.byte $69, $40, $00, $00, $00, $01
   .byte $69, $40, $00, $00, $00, $77
+cmd55_bytes
+  .byte $77, $00, $00, $00, $00, $65
+
