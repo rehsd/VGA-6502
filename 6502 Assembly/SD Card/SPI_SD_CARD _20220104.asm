@@ -7,10 +7,10 @@
   ;Adapted work from https://hackaday.io/project/174867-reading-sd-cards-on-a-65026522-computer
   ;
   ;    sta DDR3B/PORT3B     ;CONTROL -all pins output
-  ;                           OE      = %00000001      ;589 OEB        (parallel to serial)
+  ;                           OE      = %00000001      ;589 OEB   When set (high), disables output of the shift register to the MOSI line. Generally, this should not be set when writing to PORT3B, as MOSI output can always be enabled.
   ;                           SCK     = %00000010
   ;                           RCK_OUT = %00000100      ;589 RCK
-  ;                           SLOAD   = %00001000      ;589 SLOAD
+  ;                           SLOAD   = %00001000      ;589 SLOAD   **This should always be included when writing to PORT3B - keep inputs on parallel versus serial into 589
   ;                           RCK_IN  = %00010000      ;595 RCK        (serial to parallel)
   ;
   ;    sta DDR3A           ;DATA -all pins output
@@ -66,46 +66,56 @@ SPI_SDCard_Testing:
 
     jsr SPI_SDCard_Init
 
-    jsr Delay40 ;important
+    jsr Delay00 ;important
 
-    lda #0
+    lda #(SLOAD)
     sta PORT3B
 
     try0:
       jsr DelayC0 ;important
       jsr CS_Enable
+
       jsr SPI_SDCard_SendCommand0
         jsr CS_Disable
         jsr PrintResult
         cmp #$01
         bne try0
-      jsr Delay40
+      ;jsr Delay40
 
-    jsr CS_Enable
-    jsr SPI_SDCard_SendCommand8
-      jsr PrintResult
+    try8:
+      jsr CS_Enable
+      jsr SPI_SDCard_SendCommand8
+        jsr PrintResult
 
-      ; Read 32-bit return value, but ignore it
-      jsr SPI_SDCard_ReceiveByte
-      jsr Delay80
-      jsr SPI_SDCard_ReceiveByte
-      jsr Delay80
-      jsr SPI_SDCard_ReceiveByte
-      jsr Delay80
-      jsr SPI_SDCard_ReceiveByte
-      jsr Delay80
-    jsr CS_Disable
-    jsr Delay40
+        ; Read 32-bit return value, but ignore it
+        jsr SPI_SDCard_ReceiveByte
+        jsr Delay80
+        jsr SPI_SDCard_ReceiveByte
+        jsr Delay80
+        jsr SPI_SDCard_ReceiveByte
+        jsr Delay80
+        jsr SPI_SDCard_ReceiveByte
+        jsr Delay80
+
+      jsr CS_Disable
+      ;jsr Delay40
 
     try55:
     jsr CS_Enable
+
     jsr SPI_SDCard_SendCommand55
-    jsr CS_Disable
     jsr PrintResult
-    ;jsr Delay40
+
+    jsr CS_Disable
+
+    lda #(SLOAD)  ;No SPI_DEV5_SDCARD
+    sta PORT3B
+
+    ; jsr Delay80
 
     try41:
     jsr CS_Enable
+
     jsr SPI_SDCard_SendCommand41
       jsr CS_Disable
       jsr PrintResult
@@ -113,12 +123,12 @@ SPI_SDCard_Testing:
       ;should have a result of $0 if successful
       cmp #$00
       beq SDCardInitComplete
-      ;cmp #$01    ;if not initialized and if received a 01, give it some time and try again - any other result is an error
-      cmp #$05    ;testing
+      cmp #$01    ;if not initialized and if received a 01, give it some time and try again - any other result is an error
+      ;cmp #$05    ;testing
       bne SDCardFail
-      ;jsr Delay00
+      jsr Delay00
       bra try55
-    jsr Delay40
+    ;jsr Delay40
 
     SDCardInitComplete:
       jsr PrintString_FPGA_InitComplete
@@ -146,7 +156,7 @@ SDCardFail:
 CS_Enable:
     pha
     jsr SendGarbageByte
-    lda #(SPI_DEV5_SDCARD)
+    lda #(SLOAD | SPI_DEV5_SDCARD)
     sta PORT3B
     jsr SendGarbageByte
     pla
@@ -154,13 +164,28 @@ CS_Enable:
 CS_Disable:
     pha
     jsr SendGarbageByte
-    lda #0  ;No SPI_DEV5_SDCARD
+    lda #(SLOAD)  ;No SPI_DEV5_SDCARD
     sta PORT3B
     jsr SendGarbageByte
     pla
     rts
 SendGarbageByte:
     pha
+    
+    lda #%11111111      ;output
+    sta DDR3A           ;DATA -all pins output
+
+    jsr Set_MOSI_High
+
+    lda #(SLOAD | SPI_DEV5_SDCARD)   ;shift clock and receive/latch clock
+    sta PORT3B
+    jsr DelayF0
+
+    ;start low
+    lda #(OEB595)
+    sta PORT2A
+    jsr DelayF0 
+
     ;cycle the clock, doesn't matter what data is being sent
     lda #(SPI_SCK | OEB595)
     sta PORT2A
@@ -217,20 +242,21 @@ SendGarbageByte:
     lda #(OEB595)
     sta PORT2A
     jsr DelayF0 
+
     pla
   rts
 ToggleCS:
     pha
 
     ;toggle CS
-    lda #0
+    lda #(SLOAD)
     sta PORT3B
     jsr DelayC0
     lda #(SPI_SCK | OEB595)
     sta PORT2A
     jsr DelayC0 
 
-    lda #(SPI_DEV5_SDCARD)
+    lda #(SLOAD | SPI_DEV5_SDCARD)
     sta PORT3B
     lda #(OEB595)    
     sta PORT2A
@@ -250,8 +276,6 @@ SPI_SDCard_SendCommand0:
     sta zp_sd_cmd_address
     lda #>cmd0_bytes
     sta zp_sd_cmd_address+1
-
-
 
     jsr PrintString_FPGA_SendCmd  
     lda #$5B  ;[
@@ -463,7 +487,7 @@ SPI_SDCard_Init:
 
     //MOSI high
     jsr Set_MOSI_High    
-    ldx #100     ;need 80 clock cycles for SD Card start up
+    ldx #80     ;need 80 clock cycles for SD Card start up
     ;ldx #$FF      ;testing
     SPI_SDCard_Init_LoopTop:
         ;cycle 80 times
@@ -471,16 +495,20 @@ SPI_SDCard_Init:
         ;CS/OEB
         ;lda #(SCK | SPI_DEV5_SDCARD)
         ;or no CS/OEB
-        lda #(SCK)
-
+        lda #(SLOAD)
         sta PORT3B
+
+        lda #(OEB595)
+        sta PORT2A
+        jsr DelayA0                     ;need to test different delays
+
         lda #(SPI_SCK | OEB595)     ;Keep 595 turned off until we are reading back in from SPI
         sta PORT2A
         jsr DelayA0                     ;need to test different delays
 
-        ;lda #(SPI_DEV5_SDCARD)
-        lda #0
-        sta PORT3B
+        ;lda #(SCK | SLOAD)
+        ;sta PORT3B
+
         lda #(OEB595)
         sta PORT2A
         jsr DelayA0                     ;need to test different delays
@@ -488,40 +516,48 @@ SPI_SDCard_Init:
         dex
         bne SPI_SDCard_Init_LoopTop
 
+        lda #(OEB595)
+        sta PORT2A
+        jsr DelayA0 
     rts
 Set_MOSI_High:
-   
+    pha
+    phx
+
     jsr DelayC0
 
-    lda #(SCK | RCK_OUT)   ;shift clock and receive/latch clock
+    lda #%11111111      ;output
+    sta DDR3A 
+
+    ;lda #(SLOAD | SCK | RCK_OUT | SPI_DEV5_SDCARD)   ;shift clock and receive/latch clock
+    ;sta PORT3B
+    ;jsr DelayC0
+
+    ;lda #(SLOAD | SPI_DEV5_SDCARD)
+    ;sta PORT3B
+    ;jsr DelayC0
+
+    ;lda #(SLOAD | SCK | SPI_DEV5_SDCARD)
+    ;sta PORT3B
+    ;jsr DelayC0
+
+    lda #(OE | SCK | SPI_DEV5_SDCARD)
     sta PORT3B
     jsr DelayC0
 
-    lda #0
-    sta PORT3B
-    jsr DelayC0
-
-    lda #(SLOAD | SCK)
-    sta PORT3B
-    jsr DelayC0
-
-    lda #(OE | SCK | SLOAD)
-    sta PORT3B
-    jsr DelayC0
-
-    lda #$FF    ;data to send (i.e., instruction #)
+    lda #$FF    ;data to send
     sta PORT3A
     jsr DelayC0
 
-    lda #(OE | SLOAD)
+    lda #(OE | SPI_DEV5_SDCARD | RCK_OUT)
     sta PORT3B
     jsr DelayC0
 
-    lda #(OE | SLOAD | SCK | RCK_OUT)
+    lda #(OE | SCK | RCK_OUT | SPI_DEV5_SDCARD)
     sta PORT3B
     jsr DelayC0
 
-    lda #(OE | SLOAD)
+    lda #(OE | SPI_DEV5_SDCARD)
     sta PORT3B
     jsr DelayC0
 
@@ -529,47 +565,27 @@ Set_MOSI_High:
     ;sta PORT3B
     ;jsr DelayC0
 
-    lda #0
+    lda #(SLOAD | OE | SPI_DEV5_SDCARD)
     sta PORT3B
     jsr DelayC0
 
     ;Data is in the shift register, now shift it out
     ;;;;;
+    ;SPI card design issue -- reset shift register?
 
-    ;lda #(SLOAD)
-    ;sta PORT3B
-    ;jsr DelayC0
+    ;ldx #1
+    ;shiftLoop:
+    ;  lda #(SLOAD | SPI_DEV5_SDCARD | SCK)        ;bit shifted out
+    ;  sta PORT3B
+    ;  jsr DelayF0
+    ;  lda #(SLOAD | SPI_DEV5_SDCARD)
+    ;  sta PORT3B
+    ;  jsr DelayF0
+    ;  dex
+    ;  bne shiftLoop
 
-    lda #(SLOAD | SPI_DEV5_SDCARD | SCK)        ;bit1 shifted out
-    sta PORT3B
-    jsr DelayC0
-    ;;lda #(SPI_SCK | OEB595)
-    ;;sta PORT2A
-    ;;jsr DelayC0
-
-    ;lda #(SLOAD | SPI_DEV5_SDCARD)
-    ;sta PORT3B
-    ;jsr DelayC0
-    ;;lda #OEB595
-    ;;sta PORT2A
-    ;;jsr DelayC0
-
-    ;lda #(SLOAD | SPI_DEV5_SDCARD | SCK)        ;bit2 shifted out
-    ;sta PORT3B
-    ;jsr DelayC0
-    ;;lda #(SPI_SCK | OEB595)
-    ;;sta PORT2A
-    ;;jsr DelayC0
-
-    ;lda #(SLOAD | SPI_DEV5_SDCARD)
-    ;sta PORT3B
-    ;jsr DelayC0
-    ;;lda #OEB595
-    ;;sta PORT2A
-    ;;jsr DelayC0
-
-
-
+    plx
+    pla
     rts
 SPI_SDCard_StartSession:
     lda #$D0    ;FE works
@@ -581,10 +597,10 @@ SPI_SDCard_StartSession:
     sta DDR2A           ;CONTROL_EX -all pins output -VIA2, PORTA added for additional clock/control options
     
    
-    lda #(OE | SCK | RCK_OUT | SPI_DEV0) ;#%00000111      ;dev0 to toggle others off
+    lda #(SLOAD | OE | SCK | RCK_OUT | SPI_DEV0) ;#%00000111      ;dev0 to toggle others off
     sta PORT3B
     jmp DelayC0
-    lda #%00000000
+    lda #(SLOAD)
     sta PORT3B
 
     rts
@@ -602,11 +618,11 @@ SPI_SDCard_SendCommand:
     
     jsr DelayF0
 
-    lda #(SCK | RCK_OUT| SPI_DEV5_SDCARD)   ;shift clock and receive/latch clock
+    lda #(SLOAD | SCK | RCK_OUT| SPI_DEV5_SDCARD)   ;shift clock and receive/latch clock
     sta PORT3B
     jsr DelayF0
 
-    lda #SPI_DEV5_SDCARD
+    lda #(SLOAD | SPI_DEV5_SDCARD)
     sta PORT3B
     jsr DelayF0
 
@@ -614,7 +630,7 @@ SPI_SDCard_SendCommand:
     sta PORT3B
     jsr DelayF0
 
-    lda #(OE | SCK | SLOAD| SPI_DEV5_SDCARD)
+    lda #(OE | SCK | SLOAD | SPI_DEV5_SDCARD)
     sta PORT3B
     jsr DelayF0
 
@@ -784,7 +800,7 @@ SPI_SDCard_SendCommand:
     sta PORT2A
     jsr DelayF0
 
-    lda #(SPI_DEV5_SDCARD)
+    lda #(SLOAD | SPI_DEV5_SDCARD)
     sta PORT3B
     jsr DelayF0
     lda #OEB595
@@ -798,26 +814,22 @@ SPI_SDCard_SendCommand:
     rts
 SPI_SDCard_ReceiveByte:
 
-    ;lda #$FE        ;FE works
-    ;sta delayDurationHighByte
+    jsr Set_MOSI_High
 
     ;data is latched for out, can now switch to input
     ;read it back in from the receiving SPI to parallel
     ;set VIA PORTA to input
-    
 
-    jsr DelayC0
-
-    
     lda #%00000000    ;all pins input - data
     sta DDR3A
     jsr DelayC0
 
-    lda #(SCK| SPI_DEV5_SDCARD)
+
+    lda #(SCK | SPI_DEV5_SDCARD)
     sta PORT3B
     jsr DelayC0
 
-    lda #(SLOAD | SPI_DEV5_SDCARD | SCK)
+    lda #(SPI_DEV5_SDCARD | SCK)
     sta PORT3B
     jsr DelayC0
     lda #(SPI_SCK | OEB595)
@@ -942,7 +954,7 @@ SPI_SDCard_ReceiveByte:
     jsr DelayC0
 
 
-    lda #(SCK | SPI_DEV5_SDCARD)    ; | SPI_DEV7 (now OE595 on PORT2A)
+    lda #(SLOAD | SCK | SPI_DEV5_SDCARD)    ; | SPI_DEV7 (now OE595 on PORT2A)
     sta PORT3B
     jsr DelayC0
 
@@ -950,8 +962,9 @@ SPI_SDCard_ReceiveByte:
     sta PORT3B
     jsr DelayC0
 
-    ;lda #$F0
-    ;sta DelayC0DurationHighByte
+
+    
+
 
     ;load result into A register. calling procedure can use it.
     lda PORT3A
@@ -965,7 +978,7 @@ SPI_SDCard_ReceiveByte:
     rts
 SPI_SDCard_SendExtraClocks:
     
-    lda #0
+    lda #(SLOAD)
     sta PORT3B
     
     lda #(SPI_SCK | OEB595)
@@ -1138,17 +1151,17 @@ ReadHaveData:
 
   rts
 PrintResult:
-  jsr Delay00
+  jsr DelayF0
   jsr newline_fpga
-  jsr Delay00
+  jsr DelayF0
   jsr newline_fpga
-  jsr Delay00
+  jsr DelayF0
   jsr PrintString_FPGA_Result
-  jsr DelayC0
+  jsr DelayF0
   jsr print_hex_FPGA
   jsr newline_fpga
   jsr newline_fpga
-  jsr Delay00
+  jsr DelayF0
   rts
 PrintString_FPGA_SendCmd
     phx
