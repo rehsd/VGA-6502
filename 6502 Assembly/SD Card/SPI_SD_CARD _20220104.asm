@@ -125,8 +125,7 @@ SPI_SDCard_Testing:
 
     jsr SPI_SDCard_SendCommand41
       jsr CS_Disable
-      jsr DelayA0
-      jsr DelayA0
+      jsr Delay00
       jsr newline_fpga
       ;jsr PrintResult
       ;should have a result of $0 if successful
@@ -276,7 +275,7 @@ ToggleCS:
   rts
 
 ;Separate command routines that are essentially the same
-;Can consolidate later... left this way for initiat prototyping and debuggin
+;Can consolidate later... left this way for initial prototyping and debugging
 SPI_SDCard_SendCommand0:
     ;.cmd0 ; GO_IDLE_STATE - resets card to idle state, and SPI mode
     ;jsr ToggleCS
@@ -1017,10 +1016,10 @@ SPI_SDCard_ReadBytes:
 
   jsr SPI_SDCard_ReadByteWait
   cmp #$00
-  jsr print_hex_FPGA
+  ;jsr print_hex_FPGA
   beq ReadSuccess
 
-  lda #$7A  ;'z'
+  lda #$21  ;'!'
   jsr print_char_FPGA
 
   rts
@@ -1029,47 +1028,27 @@ ReadSuccess:
   jsr SPI_SDCard_ReadByteWait
   jsr newline_fpga
   ;jsr Delay80
-  jsr print_hex_FPGA
-  cmp #$fe
+  ;jsr print_hex_FPGA
+  cmp #$fe  ;always look for #$FE to see if we have data
   beq ReadHaveData
 
   rts
 ReadHaveData:
   ; Need to read 512 bytes.  Read two at a time, 256 times.
-  lda #0
-  sta $70 ; counter
+  lda #32
+  sta $70 ; variable to store loop counter
   readLoop:
-    jsr Delay00
+    ;jsr Delay00
     jsr SPI_SDCard_ReceiveByte
-    jsr print_hex_FPGA
+    ;jsr print_hex_FPGA
+    cmp #$1C  ;file separator
+    beq readLoopComplete    ;if we hit a file separator, we're done reading the file
 
-    jsr Delay00
-    jsr SPI_SDCard_ReceiveByte
-    jsr print_hex_FPGA
-
-    jsr Delay00
-    jsr SPI_SDCard_ReceiveByte
-    jsr print_hex_FPGA
-
-    jsr Delay00
-    jsr SPI_SDCard_ReceiveByte
-    jsr print_hex_FPGA
-
-    ;sta $71 ; byte1
-    ;jsr DelayC0
-    ;jsr SPI_SDCard_ReceiveByte
-    ;sta $72 ; byte2
+    jsr print_char_FPGA     ;otherwise, print the char and repeat the loop
     dec $70 ; counter
-    ;jsr DelayC0
     bne readLoop
 
-    ; Print the last two bytes read, in hex
-    ;lda $71 ; byte1
-    ;jsr print_hex_FPGA
-    ;jsr DelayC0
-    ;lda $72 ; byte2
-    ;jsr print_hex_FPGA
-
+    readLoopComplete:
   rts
 PrintResult:
   ;jsr DelayF0
