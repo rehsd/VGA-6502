@@ -5,7 +5,7 @@ Video resolution: 100 columns X 60 rows
 Memory map
 
 	-EEPROM and RAM are 256 kbit = 32 KByte
-	-2 KB for each row in the table below
+	-4 KB for each row in the table below
 	-VGA gets 4 KB total (Used in code as 32 pages of 128 columns = 4 KB)
 
 	0000 xxxx xxxx xxxx		0000-0FFF		6502 RAM Address Space
